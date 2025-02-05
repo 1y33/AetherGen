@@ -1,0 +1,23 @@
+Diffusion Model : create cuda kernel fussed
+
+[] -> Create Conv + ReLU + BatchNorm kernel	 	
+[] -> Create a kernel for attention kernel. Trying to optimize it
+-> Maybe a kernel for having the skip connection? I am thinking to have a kernel that will performe some reduction operations
+
+[] -> MLP
+[] -> GeGLu 
+
+[] -> add dropout to layers !
+
+[] -> Add activation to all of them
+
+[] -> Kernel for skip conenction Conv
+[] -> Kernel for VAEs . To compute stuff in the forward directly. Like taking the mean and computing stuff directly.
+[] -> Kernel for having the thetas computed and maybe somehow save it on the gpu ? Like on the runtime till one signal save it
+
+
+-> 2x faster than pytorch !
+
+
+Convs : https://www.evl.uic.edu/sjames/cs525/final.html
+https://leimao.github.io/blog/Neural-Network-Batch-Normalization-Fusion/
