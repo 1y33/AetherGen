@@ -21,3 +21,15 @@ Diffusion Model : create cuda kernel fussed
 
 Convs : https://www.evl.uic.edu/sjames/cs525/final.html
 https://leimao.github.io/blog/Neural-Network-Batch-Normalization-Fusion/
+
+
+Project : What i want to achive is to create a diffusion model that is small, but also have the custom kernels and test them. 
+          Implement papers related to diffusion models. 
+
+          So the model will be small and custom convolutions. 
+
+          Maybe create custom layers :D with functions that can interpolate between them .4
+
+
+
+TODO : Diagram of the model ! 
