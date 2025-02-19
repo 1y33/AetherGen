@@ -12,7 +12,8 @@ os.environ['MIOPEN_FIND_MODE'] = '2'
 model_args = unet.UNetConfig(in_channels=3,time_dim=512,features=(64,256,512,1024,2048))
 trainer_args = trainer.TrainerConfig(epochs=301,batch_size=512,learning_rate=1e-6,sample_epoch=50)
 
-
+ 
+ 
 model = unet.ModifiedUNet(model_args).to(trainer_args.device)
 model.load_state_dict(torch.load("model_epoch_100.pth"))
 model.eval()
