@@ -22,16 +22,16 @@ utils.plot_images(diffusion_model.sample(model, 81), nrow=9, save_path="sample.p
 
 
 
-# flowers_dataset = torchvision.datasets.Flowers102(root="data/", 
-#                                                   download=True,
-#                                                   transform=trainer_args.transform)
+flowers_dataset = torchvision.datasets.Flowers102(root="data/", 
+                                                  download=True,
+                                                  transform=trainer_args.transform)
 
-# train_dataloader = DataLoader(
-#     flowers_dataset,
-#     batch_size=trainer_args.batch_size,
-#     shuffle=True,
-#     pin_memory=True,
-#     num_workers=8,
-# )
+train_dataloader = DataLoader(
+    flowers_dataset,
+    batch_size=trainer_args.batch_size,
+    shuffle=True,
+    pin_memory=True,
+    num_workers=8,
+)
 
-# trainer.train(trainer_args, model_args, train_dataloader,"model_epoch_800.pth")
+trainer.train(trainer_args, model_args, train_dataloader,"model_epoch_800.pth")
