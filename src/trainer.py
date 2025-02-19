@@ -7,6 +7,7 @@ import torch
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from .utils import plot_images, model_params
+from torch.optim.lr_scheduler import CosineAnnealingLR
 
 class TrainerConfig:
     def __init__(
@@ -14,8 +15,8 @@ class TrainerConfig:
         device="cuda" if torch.cuda.is_available() else "cpu",
         epochs=500,
         batch_size=64,
-        learning_rate=1e-3,
-        sample_epoch=100,
+        learning_rate=1e-4,       # Updated learning rate
+        sample_epoch=50,          # More frequent sampling
         num_samples=4,
         image_size=64,
     ):
@@ -23,24 +24,24 @@ class TrainerConfig:
         self.epochs = epochs
         self.batch_size = batch_size
         self.lr = learning_rate
+        self.weight_decay = learning_rate * 0.01  # 1e-6 weight decay
         self.sample_epoch = sample_epoch
         self.num_samples = num_samples
         self.image_size = image_size
-        
+        self.eta_min = 1e-6  # Minimum learning rate for cosine annealing
+
         # Define the transform pipeline
         self.transform = transforms.Compose([
             transforms.Resize((image_size, image_size)),
+            transforms.RandomHorizontalFlip(),  # Mild spatial augmentation
             transforms.ToTensor(),
-            transforms.RandomHorizontalFlip(),
-            transforms.RandomRotation(10),
-            transforms.RandomAffine(0, translate=(0.1,0.1), scale=(0.5,1.5), shear=10),
-            transforms.RandomPerspective(distortion_scale=0.5, p=0.5),
-            transforms.RandomResizedCrop(image_size, scale=(0.8, 1.0), ratio=(0.8, 1.2)),
-            transforms.RandomApply([transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.02)], p=0.8),
-            transforms.RandomGrayscale(p=0.2),
-            transforms.RandomApply([transforms.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 2.0))], p=0.1),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        ])
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], 
+                         std=[0.229, 0.224, 0.225]),
+            # transforms.RandomApply([
+            #     transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.01)
+            #     ], p=0.3)
+])
+
 
     @classmethod
     def from_dict(cls, config_dict):
@@ -56,12 +57,18 @@ def model_save(model, epoch):
 def train(config: TrainerConfig,
           model_config: ModifiedUNet,
           train_dataloader: DataLoader,
-          ):
+          weights_path: str = None):
     
     device = config.device
-    model= ModifiedUNet(model_config).to(device)
+    model = ModifiedUNet(model_config).to(device)
     model_params(model)
-    optimizer = optim.AdamW(model.parameters(), lr=config.lr)
+    
+    model.load_state_dict(torch.load(weights_path)) if weights_path else None
+    
+    optimizer = optim.AdamW(model.parameters(), lr=config.lr, weight_decay=config.weight_decay)
+    
+    scheduler = CosineAnnealingLR(optimizer, T_max=config.epochs, eta_min=config.eta_min)
+    
     mse = nn.MSELoss()
     diffusion = DiffusionModel(device=device)
     
@@ -70,9 +77,9 @@ def train(config: TrainerConfig,
         running_loss = 0
         
         pbar = tqdm(train_dataloader,
-                   desc=f'Epoch {epoch}',
-                   leave=True,
-                   position=0)
+                    desc=f'Epoch {epoch}',
+                    leave=True,
+                    position=0)
         
         for images, _ in pbar:
             images = images.to(device)
@@ -92,11 +99,11 @@ def train(config: TrainerConfig,
         
         pbar.close()
         
+        scheduler.step()
         print(f"Epoch {epoch} completed | Average Loss: {running_loss/len(train_dataloader):.4f}")
-
+        
         if epoch % config.sample_epoch == 0:
             model_save(model, epoch)
             print(f"Model saved at epoch {epoch}")
             sampled_images = diffusion.sample(model, n=config.num_samples)
             plot_images(sampled_images)
-
