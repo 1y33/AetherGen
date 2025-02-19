@@ -46,6 +46,12 @@ class TrainerConfig:
     def from_dict(cls, config_dict):
         return cls(**config_dict)
 
+def model_save(model, epoch):
+    """
+    Save the model's state dictionary to a file.
+    """
+    torch.save(model.state_dict(), f"model_epoch_{epoch}.pth")
+    print(f"Model saved at epoch {epoch}")
 
 def train(config: TrainerConfig,
           model_config: ModifiedUNet,
@@ -89,6 +95,8 @@ def train(config: TrainerConfig,
         print(f"Epoch {epoch} completed | Average Loss: {running_loss/len(train_dataloader):.4f}")
 
         if epoch % config.sample_epoch == 0:
+            model_save(model, epoch)
+            print(f"Model saved at epoch {epoch}")
             sampled_images = diffusion.sample(model, n=config.num_samples)
             plot_images(sampled_images)
 
