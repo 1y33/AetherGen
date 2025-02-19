@@ -16,8 +16,9 @@ class DiffusionModel:
     def noise_images(self, x, t):
         sqrt_alpha_hat = torch.sqrt(self.alpha_hat[t])[:, None, None, None]
         sqrt_one_minus_alpha_hat = torch.sqrt(1 - self.alpha_hat[t])[:, None, None, None]
-        ε = torch.randn_like(x)
-        return sqrt_alpha_hat * x + sqrt_one_minus_alpha_hat * ε, ε
+        e= torch.randn_like(x)
+        
+        return sqrt_alpha_hat * x + sqrt_one_minus_alpha_hat * e, e
 
     def sample_timesteps(self, n):
         return torch.randint(low=1, high=self.noise_steps, size=(n,))
@@ -38,7 +39,7 @@ class DiffusionModel:
                 noise = torch.randn_like(x)
             else:
                 noise = torch.zeros_like(x)
-                
+            
             x = 1 / torch.sqrt(alpha) * (x - ((1 - alpha) / (torch.sqrt(1 - alpha_hat))) * predicted_noise) + torch.sqrt(beta) * noise
             
         model.train()

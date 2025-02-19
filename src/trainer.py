@@ -19,6 +19,7 @@ class TrainerConfig:
         sample_epoch=50,          # More frequent sampling
         num_samples=4,
         image_size=64,
+        name="model"
     ):
         self.device = device
         self.epochs = epochs
@@ -29,7 +30,7 @@ class TrainerConfig:
         self.num_samples = num_samples
         self.image_size = image_size
         self.eta_min = 1e-6  # Minimum learning rate for cosine annealing
-
+        self.name=name
         # Define the transform pipeline
         self.transform = transforms.Compose([
             transforms.Resize((image_size, image_size)),
@@ -47,11 +48,11 @@ class TrainerConfig:
     def from_dict(cls, config_dict):
         return cls(**config_dict)
 
-def model_save(model, epoch):
+def model_save(model, epoch,name):
     """
     Save the model's state dictionary to a file.
     """
-    torch.save(model.state_dict(), f"model_epoch_{epoch}.pth")
+    torch.save(model.state_dict(), f"{name}_epoch_{epoch}.pth")
     print(f"Model saved at epoch {epoch}")
 
 def train(config: TrainerConfig,
@@ -65,12 +66,13 @@ def train(config: TrainerConfig,
     
     model.load_state_dict(torch.load(weights_path)) if weights_path else None
     
-    optimizer = optim.AdamW(model.parameters(), lr=config.lr, weight_decay=config.weight_decay)
-    
+    optimizer = optim.AdamW(model.parameters(), lr=config.lr)    
     scheduler = CosineAnnealingLR(optimizer, T_max=config.epochs, eta_min=config.eta_min)
-    
+
     mse = nn.MSELoss()
     diffusion = DiffusionModel(device=device)
+    
+    losses = []
     
     for epoch in range(config.epochs):
         model.train()
@@ -101,9 +103,13 @@ def train(config: TrainerConfig,
         
         scheduler.step()
         print(f"Epoch {epoch} completed | Average Loss: {running_loss/len(train_dataloader):.4f}")
+
+        losses.append(running_loss/len(train_dataloader))
         
         if epoch % config.sample_epoch == 0:
-            model_save(model, epoch)
+            model_save(model, epoch,config.name)
             print(f"Model saved at epoch {epoch}")
             sampled_images = diffusion.sample(model, n=config.num_samples)
             plot_images(sampled_images)
+
+    return losses
