@@ -66,7 +66,7 @@ def train(config: TrainerConfig,
     
     model.load_state_dict(torch.load(weights_path)) if weights_path else None
     
-    optimizer = optim.AdamW(model.parameters(), lr=config.lr)    
+    optimizer = optim.AdamW(model.parameters(), lr=config.lr, weight_decay=config.weight_decay)
     scheduler = CosineAnnealingLR(optimizer, T_max=config.epochs, eta_min=config.eta_min)
 
     mse = nn.MSELoss()
